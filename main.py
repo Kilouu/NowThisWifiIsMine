@@ -38,4 +38,3 @@ if __name__ == "__main__":
     # Stop le mode monitor sur l'interface séléctionné
     stop_mode_monitor(interface)
     
-    # Test commit
