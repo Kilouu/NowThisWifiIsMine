@@ -27,7 +27,9 @@ if __name__ == "__main__":
     
     # Launch Attack
     if attack_type == "WPA":
-        capture_from_target_json_wpa(interface)
+        wpa_launch_attack(interface)
+        
+        '''capture_from_target_json_wpa(interface)
         selected_wordlist = list_and_choose_wordlist()
         
         if selected_wordlist:
@@ -35,7 +37,7 @@ if __name__ == "__main__":
             crack_handshake_with_wordlist(selected_wordlist)
             
         else:
-            print("Aucune wordlist sélectionnée.")
+            print("Aucune wordlist sélectionnée.")'''
         
     elif attack_type == "WEP":
         capture_from_target_json_wep(interface)
