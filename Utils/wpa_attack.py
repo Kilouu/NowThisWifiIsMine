@@ -1,16 +1,16 @@
 import subprocess
 import json
 import re
-import pandas as pd
 from Utils.networkscan import *
 from Utils.save_to import *
 
 # Ajout Des Success color
 SUCCESS_COLOR = "\033[92m"  # Green
 ERROR_COLOR = "\033[91m"    # Red
+INFO_COLOR = "\033[93m"     # Yellow
 RESET_COLOR = "\033[0m"     # Reset
 
-
+# Fonction pour capturer des paquets à partir d'un fichier JSON cible
 def capture_from_target_json_wpa(interface, target_path="Target/target.json", output_dir="Capture"):
     """
     Effectue une capture de paquets à partir des informations du fichier target.json.
@@ -35,11 +35,11 @@ def capture_from_target_json_wpa(interface, target_path="Target/target.json", ou
                 stderr=subprocess.PIPE
             )  
             
-            print("Attente de 5 secondes avant le lancement des paquets de désauthentification")
+            print(f"{INFO_COLOR}Attente de 5 secondes avant le lancement des paquets de désauthentification{RESET_COLOR}")
             time.sleep(5)
             monitor_for_handshake_and_attack(bssid, interface)
             process.terminate()
-            print("Processus de capture terminé.")
+            print(f"{SUCCESS_COLOR}Processus de capture terminé.{RESET_COLOR}")
             
     except FileNotFoundError:
         print(f"{ERROR_COLOR}[ERROR] : Le fichier {target_path} n'existe pas.{RESET_COLOR}")
@@ -48,6 +48,7 @@ def capture_from_target_json_wpa(interface, target_path="Target/target.json", ou
     except Exception as e:
         print(f"{ERROR_COLOR}[ERROR] : Une erreur inattendue s'est produite : {str(e)}{RESET_COLOR}")
 
+# Fonction pour exécuter une attaque de désauthentification
 def execute_deauth_attack(bssid, interface, packets=30):
     """
     Exécute une attaque de désauthentification sur le réseau Wi-Fi cible.
@@ -69,6 +70,7 @@ def execute_deauth_attack(bssid, interface, packets=30):
     except Exception as e:
         print(f"{ERROR_COLOR}[EXCEPTION] : Une erreur s'est produite : {e}{RESET_COLOR}")
 
+# Fonction pour vérifier si un handshake a été capturé
 def check_handshake(capture_file):
     """
     Vérifie si un handshake a été capturé dans le fichier fourni.
@@ -88,12 +90,13 @@ def check_handshake(capture_file):
             time.sleep(2)
             return True
         else:
-            print(f"{ERROR_COLOR}[INFO] : Aucun handshake détecté dans {capture_file}.{RESET_COLOR}")
+            print(f"{INFO_COLOR}[INFO] : Aucun handshake détecté dans {capture_file}.{RESET_COLOR}")
             return False
     except Exception as e:
         print(f"{ERROR_COLOR}[EXCEPTION] : Une erreur s'est produite lors de la vérification : {e}{RESET_COLOR}")
         return False
 
+# Fonction pour surveiller le handshake et exécuter des attaques de deauth
 def monitor_for_handshake_and_attack(bssid, interface):
     """
     Effectue une boucle qui exécute une attaque de deauth toutes les 30 secondes
@@ -103,7 +106,7 @@ def monitor_for_handshake_and_attack(bssid, interface):
     - bssid (str): L'adresse MAC du réseau cible.
     - interface (str): L'interface réseau à utiliser pour l'attaque.
     """
-    print("[INFO] : Surveillance du handshake en cours...")
+    print(f"{INFO_COLOR}[INFO] : Surveillance du handshake en cours...{RESET_COLOR}")
     while True:
         execute_deauth_attack(bssid, interface)
         time.sleep(30)  # Attendre 30 secondes entre chaque tentative
@@ -113,8 +116,9 @@ def monitor_for_handshake_and_attack(bssid, interface):
             time.sleep(2)
             break
         else:
-            print(f"{ERROR_COLOR}[INFO] : Aucun handshake détecté. Nouvelle tentative...{RESET_COLOR}")
+            print(f"{INFO_COLOR}[INFO] : Aucun handshake détecté. Nouvelle tentative...{RESET_COLOR}")
 
+# Fonction pour lister et choisir une wordlist
 def list_and_choose_wordlist(wordlist_dir="Wordlist"):
     """
     Liste les fichiers de wordlists disponibles dans le dossier spécifié et permet à l'utilisateur d'en choisir un.
@@ -129,12 +133,12 @@ def list_and_choose_wordlist(wordlist_dir="Wordlist"):
         
         wordlists = [f for f in os.listdir(wordlist_dir) if os.path.isfile(os.path.join(wordlist_dir, f))]
         if not wordlists:
-            print(f"{ERROR_COLOR}[INFO] : Aucun fichier de wordlist trouvé dans '{wordlist_dir}'.{RESET_COLOR}")
+            print(f"{INFO_COLOR}[INFO] : Aucun fichier de wordlist trouvé dans '{wordlist_dir}'.{RESET_COLOR}")
             return None
 
-        print("[INFO] : Wordlists disponibles :")
+        print(f"{INFO_COLOR}[INFO] : Wordlists disponibles :{RESET_COLOR}")
         for i, wordlist in enumerate(wordlists, start=1):
-            print(f"{i}. {wordlist}")
+            print(f"{INFO_COLOR}{i}. {wordlist}{RESET_COLOR}")
         
         choice = int(input("Entrez le numéro de la wordlist à utiliser : "))
         if 1 <= choice <= len(wordlists):
@@ -150,6 +154,7 @@ def list_and_choose_wordlist(wordlist_dir="Wordlist"):
         print(f"{ERROR_COLOR}[EXCEPTION] : Une erreur s'est produite : {e}{RESET_COLOR}")
     return None
 
+# Fonction pour cracker un handshake avec une wordlist
 def crack_handshake_with_wordlist(wordlist_path, capture_file="Capture/capture_handshake-01.cap"):
     """
     Tente de cracker un handshake WPA en utilisant une wordlist avec aircrack-ng et affiche la progression.
@@ -181,7 +186,7 @@ def crack_handshake_with_wordlist(wordlist_path, capture_file="Capture/capture_h
 
         process.wait()
         if process.returncode == 0:
-            print(f"{SUCCESS_COLOR}[INFO] : Tentative de craquage terminée.{RESET_COLOR}")
+            print(f"{INFO_COLOR}[INFO] : Tentative de craquage terminée.{RESET_COLOR}")
         else:
             print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite lors de l'exécution.\n{process.stderr.read()}{RESET_COLOR}")
     except Exception as e:

