@@ -8,6 +8,7 @@ def create_directories():
     os.makedirs("Capture", exist_ok=True)
     os.makedirs("Result", exist_ok=True)
     os.makedirs("Target", exist_ok=True)
+    os.makedirs("Station", exist_ok=True)
 
 
 # Capture les Différents réseaux WIFI disponible pendant 20 Secondes
