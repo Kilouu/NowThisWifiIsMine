@@ -1,5 +1,6 @@
 import subprocess
 import json
+import re
 import pandas as pd
 from Utils.networkscan import *
 from Utils.save_to import *
@@ -471,25 +472,41 @@ def list_and_choose_wordlist(wordlist_dir="Wordlist"):
 
 
 # Crack le Handshake
-def crack_handshake_with_wordlist(wordlist_path ,capture_file="Capture/capture_handshake-01.cap"):
+def crack_handshake_with_wordlist(wordlist_path, capture_file="Capture/capture_handshake-01.cap"):
     """
-    Tente de cracker un handshake WPA en utilisant une wordlist avec aircrack-ng.
-
-    :param capture_file: Le chemin vers le fichier de capture contenant le handshake (par défaut "Capture/capture_handshake-01.cap").
+    Tente de cracker un handshake WPA en utilisant une wordlist avec aircrack-ng et affiche la progression.
+    
     :param wordlist_path: Le chemin vers la wordlist à utiliser.
+    :param capture_file: Le chemin vers le fichier de capture contenant le handshake.
     """
     if not wordlist_path:
         print("[ERROR]: Aucun chemin de wordlist fourni.")
         return
-    
+
     try:
-        command = f"sudo aircrack-ng -w {wordlist_path} {capture_file}"
-        result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Compte le nombre total de mots de passe dans la wordlist pour le suivi du pourcentage
+        with open(wordlist_path, 'r') as file:
+            total_passwords = sum(1 for _ in file)
         
-        if result.returncode == 0:
-            print(f"[SUCCESS]: Tentative de craquage terminée.")
-            print(result.stdout)
+        command = f"sudo aircrack-ng -w {wordlist_path} {capture_file}"
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        for line in process.stdout:
+            # Affiche les lignes de sortie pour suivre l'état
+            print(line.strip())
+            
+            if "KEY FOUND!" in line:
+                key_match = re.search(r"KEY FOUND!\s*\[\s*(.*?)\s*\]", line)
+                if key_match:
+                    key = key_match.group(1)
+                    print(f"[SUCCESS]: Clé trouvée ! La clé WPA est : {key}")
+                    process.kill()
+                    return
+
+        process.wait()
+        if process.returncode == 0:
+            print("[INFO]: Tentative de craquage terminée.")
         else:
-            print(f"[ERROR]: Une erreur s'est produite lors de l'exécution.\n{result.stderr}")
+            print(f"[ERROR]: Une erreur s'est produite lors de l'exécution.\n{process.stderr.read()}")
     except Exception as e:
         print(f"[EXCEPTION]: Une erreur inattendue s'est produite : {e}")
