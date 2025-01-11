@@ -4,6 +4,12 @@ import re
 from Utils.networkscan import *
 from Utils.save_to import *
 
+# Ajout Des Success color
+ERROR_COLOR = "\033[91m"    # Red
+INFO_COLOR = "\033[93m"     # Yellow
+RESET_COLOR = "\033[0m"     # Reset
+SUCCESS_COLOR = "\033[92m"  # Green
+
 # Extrait le nombre d'IV (vecteurs d'initialisation) à partir d'un fichier CSV de capture.
 def get_iv_count(csv_file):
     try:
