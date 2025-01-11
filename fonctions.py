@@ -183,9 +183,6 @@ def choose_attack_type(target_path="Target/target.json"):
         print(f"{ERROR_COLOR}[ERROR] : Une erreur inattendue s'est produite : {str(e)}{RESET_COLOR}")
     return None
 
-
-
-
 # Lance l'attaque WEP en utilisant les différentes étapes définies.
 def wep_launch_attack(interface, target_path="Target/target.json", output_dir="Capture"):
     capture_from_target_json_wep(interface, target_path, output_dir)

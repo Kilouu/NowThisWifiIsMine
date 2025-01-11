@@ -2,6 +2,11 @@ import subprocess
 import os
 import time
 
+# Ajout Des Success color
+ERROR_COLOR = "\033[91m"    # Red
+INFO_COLOR = "\033[93m"     # Yellow
+RESET_COLOR = "\033[0m"     # Reset
+SUCCESS_COLOR = "\033[92m"  # Green
 
 # Creer les Répertoires Manquants
 def create_directories():
@@ -9,11 +14,11 @@ def create_directories():
     os.makedirs("Result", exist_ok=True)
     os.makedirs("Target", exist_ok=True)
     os.makedirs("Wordlist", exist_ok=True)
-
+    print(f"{SUCCESS_COLOR}[SUCCESS]{RESET_COLOR} : Répertoires créés avec succès")
 
 # Capture les Différents réseaux WIFI disponible pendant 20 Secondes
 def capture_wifi_networks(interface, fichier_base, duree):
-    print(f"Recherche des réseaux Wi-Fi sur {interface} pendant {duree} secondes...")
+    print(f"{INFO_COLOR}Recherche des réseaux Wi-Fi sur {interface} pendant {duree} secondes...{RESET_COLOR}")
     process = subprocess.Popen(
         ["sudo", "airodump-ng", "--write", fichier_base, interface],
         stdout=subprocess.PIPE,
@@ -21,8 +26,7 @@ def capture_wifi_networks(interface, fichier_base, duree):
     )
     time.sleep(duree)
     process.terminate()
-    print(f"[SUCCESS] : La capture a été enregistrée")
-
+    print(f"{SUCCESS_COLOR}[SUCCESS]{RESET_COLOR} : La capture a été enregistrée")
 
 # Lit le fichier CSV et extrait les info Importante
 def read_csv_and_extract_networks(fichier_base):
@@ -46,16 +50,17 @@ def read_csv_and_extract_networks(fichier_base):
                     start_reading = True
     return reseaux
 
-
 # Affiche les réseaux Disponible et enregistre dans un Fichier Target
 def display_networks_and_select_target(reseaux, dossier_json):
     if not reseaux:
-        print("Aucun réseau détecté.")
+        print(f"{ERROR_COLOR}Aucun réseau détecté.{RESET_COLOR}")
         return
 
-    print("\nRéseaux Wi-Fi disponibles:")
+    print(f"{INFO_COLOR}\nRéseaux Wi-Fi disponibles:{RESET_COLOR}")
+    print(f"{'Numéro':<6} {'BSSID':<20} {'Channel':<8} {'Security':<10} {'ESSID':<20}")
+    print("-" * 70)
     for idx, reseau in enumerate(reseaux, start=1):
-        print(f"{idx}. BSSID: {reseau['BSSID']}, Channel: {reseau['Channel']}, Security: {reseau['Security']}, ESSID: {reseau['ESSID']}")
+        print(f"{idx:<6} {reseau['BSSID']:<20} {reseau['Channel']:<8} {reseau['Security']:<10} {reseau['ESSID']:<20}")
 
     while True:
         try:
@@ -64,10 +69,9 @@ def display_networks_and_select_target(reseaux, dossier_json):
                 target = reseaux[choice - 1]
                 return target
             else:
-                print("Veuillez entrer un numéro valide.")
+                print(f"{ERROR_COLOR}Veuillez entrer un numéro valide.{RESET_COLOR}")
         except ValueError:
-            print("Veuillez entrer un nombre valide.")
-
+            print(f"{ERROR_COLOR}Veuillez entrer un nombre valide.{RESET_COLOR}")
 
 # Supprime les fichiers de Capture
 def clean_capture_directory():
@@ -75,9 +79,9 @@ def clean_capture_directory():
         chemin_fichier = os.path.join("Capture", fichier)
         try:
             os.remove(chemin_fichier)
+            print(f"{SUCCESS_COLOR}[SUCCESS]{RESET_COLOR} : {chemin_fichier} supprimé")
         except Exception as e:
-            print(f"[ERREUR] Impossible de supprimer {chemin_fichier} : {e}")
-
+            print(f"{ERROR_COLOR}[ERREUR] Impossible de supprimer {chemin_fichier} : {e}{RESET_COLOR}")
 
 # Supprime les fichiers de Result
 def clean_result_directory():
@@ -85,5 +89,6 @@ def clean_result_directory():
         chemin_fichier = os.path.join("Result", fichier)
         try:
             os.remove(chemin_fichier)
+            print(f"{SUCCESS_COLOR}[SUCCESS]{RESET_COLOR} : {chemin_fichier} supprimé")
         except Exception as e:
-            print(f"[ERREUR] Impossible de supprimer {chemin_fichier} : {e}")
+            print(f"{ERROR_COLOR}[ERREUR] Impossible de supprimer {chemin_fichier} : {e}{RESET_COLOR}")
