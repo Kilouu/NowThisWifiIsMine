@@ -49,7 +49,7 @@ Cheat Sheet : Audit des Réseaux Sans Fil
      - Attaque par dictionnaire : `aircrack-ng -w <liste de mots> capture.cap`
 
 13. **Pyrit**
-     - Analyser la poignée de main : `pyrit -r capture.cap analyze`
+     - Analyser le Handshake : `pyrit -r capture.cap analyze`
      - Supprimer les données excédentaires : `pyrit -r capture.cap -o <output.cap> strip`
      - Importer les mots de passe : `pyrit -i passwordlist.txt import_passwords`
      - Vérifier les mots de passe de la base de données : `pyrit eval`
