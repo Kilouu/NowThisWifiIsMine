@@ -1,9 +1,9 @@
 import subprocess
 import json
-from Utils.networkscan import *
-from Utils.wpa_attack import *
-from Utils.wep_attack import *
-from Utils.save_to import *
+from networkscan import *
+from wpa_attack import *
+from wep_attack import *
+from save_to import *
 
 # Ajout Des Success color
 ERROR_COLOR = "\033[91m"    # Red
