@@ -13,7 +13,7 @@ def create_directories():
     os.makedirs("Capture", exist_ok=True)
     os.makedirs("Result", exist_ok=True)
     os.makedirs("Target", exist_ok=True)
-    os.makedirs("Wordlist", exist_ok=True)
+    os.makedirs("RogueAP", exist_ok=True)
     print(f"{SUCCESS_COLOR}[SUCCESS]{RESET_COLOR} : Répertoires créés avec succès")
 
 # Capture les Différents réseaux WIFI disponible pendant 20 Secondes

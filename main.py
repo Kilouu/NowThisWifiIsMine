@@ -2,6 +2,8 @@ import pyfiglet
 from termcolor import colored
 from src.launch_rogue_ap import *
 from src.launch_wifi_attack import *
+from prerequies import *
+import os
 
 if __name__ == "__main__":
     
