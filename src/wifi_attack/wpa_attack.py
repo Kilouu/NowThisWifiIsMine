@@ -1,8 +1,8 @@
 import subprocess
 import json
 import re
-from networkscan import *
-from save_to import *
+from .networkscan import *
+from .save_to import *
 
 # Ajout Des Success color
 SUCCESS_COLOR = "\033[92m"  # Green

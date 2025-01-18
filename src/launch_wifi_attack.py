@@ -1,4 +1,4 @@
-from wifi_attack.fonctions import * 
+from .wifi_attack.fonctions import *
 
 def launch_wifi_attack():
     # Choix de L'interface
