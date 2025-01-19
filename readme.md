@@ -23,6 +23,10 @@ Prenez le contrôle de n'importe quel réseau WiFi avec facilité. Ce projet vou
     ```bash
     pip install -r requirements.txt
     ```
+4. Exécutez le script des prérequis :
+    ```bash
+    python3 prerequies.py
+    ```
 
 ## Utilisation
 Exécutez le script principal pour commencer à gérer les réseaux WiFi :
