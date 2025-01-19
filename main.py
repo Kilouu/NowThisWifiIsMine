@@ -7,6 +7,10 @@ import os
 
 if __name__ == "__main__":
     
+    # Suppression de l'écran de la console
+    os.system("clear")
+    
+    # Affichage de la bannière ASCII Now This Wifi Is Mine
     ascii_banner = pyfiglet.figlet_format("Now This Wifi Is Mine")
     colored_banner = colored(ascii_banner, 'cyan', attrs=['bold'])
     print(colored_banner)

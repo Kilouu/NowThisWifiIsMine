@@ -25,7 +25,7 @@ Prenez le contrôle de n'importe quel réseau WiFi avec facilité. Ce projet vou
     ```
 
 ## Utilisation
-Exécutez le script principal pour commencer à gérer les réseaux WiFi :
+Exécutez le script principal pour commencer à prendre le contrôle de réseaux WiFi :
 ```bash
 python3 main.py
 ```

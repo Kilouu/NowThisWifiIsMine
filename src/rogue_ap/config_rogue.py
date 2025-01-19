@@ -52,7 +52,6 @@ def iptables_conf(interface):
         print(f"[SUCCESS] : Commande exécutée avec succès : {command3}")
 
 
-# Lancer les 2 services Hostapd et Dnsmasq
 # Allumer l'interface réseau si elle est désactivée
 def launch_interface(interface):
     if os.system(f"sudo ifconfig {interface} up") != 0:
@@ -62,23 +61,14 @@ def launch_interface(interface):
         print("[SUCCESS] : Interface réseau activée.")
 
 
-
-
+# Démarrer le service Hostapd
 def start_hostapd():
     global hostapd_process
     hostapd_process = subprocess.Popen(["sudo", "hostapd", "RogueAP/hostapd.conf"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     print("[SUCCESS] : Service Hostapd démarré avec succès.")
-
-def stop_hostapd():
-    global hostapd_process
-    if hostapd_process:
-        hostapd_process.terminate()
-        hostapd_process.wait()
-        print("[SUCCESS] : Service Hostapd arrêté avec succès.")
-    else:
-        print("[ERROR] : Aucun processus Hostapd en cours d'exécution.")
         
-    
+
+# Démarrer le service Dnsmasq
 def start_dnsmasq():
     if os.system("sudo systemctl start dnsmasq") != 0:
         print("[ERROR] : Échec du démarrage du service Dnsmasq.")
@@ -86,18 +76,15 @@ def start_dnsmasq():
         print("[SUCCESS] : Service Dnsmasq démarré avec succès.")
 
 
-
-
 # Configuration du Rogue AP        
 def setup_rogue_ap(interface, channel, essid):
+    hostapd_process = None
     create_hostapd_conf(interface, channel, essid)
     create_dnsmasq_conf(interface)
     iptables_conf(interface)
     launch_interface(interface)
     start_dnsmasq()
     start_hostapd()
-    time.sleep(120)
-    stop_hostapd()
     
 
 # Test de la fonction setup_rogue_ap
