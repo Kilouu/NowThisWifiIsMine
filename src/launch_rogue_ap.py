@@ -15,4 +15,5 @@ def launch_rogue_ap():
     print(f"BSSID: {bssid}, Channel: {channel}, Security: {security}, ESSID: {essid}")
     
     # Création du fichier de configuration Hostapd et Dnsmasq
+    hostapd_process = None
     setup_rogue_ap(interface, channel, essid)
