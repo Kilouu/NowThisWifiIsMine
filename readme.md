@@ -19,11 +19,7 @@ Prenez le contrôle de n'importe quel réseau WiFi avec facilité. Ce projet vou
     ```bash
     cd NowThisWifiIsMine
     ```
-3. Installez les dépendances requises :
-    ```bash
-    pip install -r requirements.txt
-    ```
-4. Exécutez le script des prérequis :
+3. Exécutez le script des prérequis :
     ```bash
     python3 prerequies.py
     ```
