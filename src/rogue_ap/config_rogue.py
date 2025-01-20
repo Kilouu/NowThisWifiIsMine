@@ -63,8 +63,7 @@ def launch_interface(interface):
 
 # Démarrer le service Hostapd
 def start_hostapd():
-    global hostapd_process
-    hostapd_process = subprocess.Popen(["sudo", "hostapd", "RogueAP/hostapd.conf"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    subprocess.Popen(["sudo", "hostapd", "RogueAP/hostapd.conf"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     print("[SUCCESS] : Service Hostapd démarré avec succès.")
         
 
@@ -76,9 +75,16 @@ def start_dnsmasq():
         print("[SUCCESS] : Service Dnsmasq démarré avec succès.")
 
 
+# Lancer le serveur HTTP Python
+def start_http_server():
+    os.chdir("src/rogue_ap/WebsiteRogue")
+    http_server_process = subprocess.Popen(["sudo", "python3", "-m", "http.server", "80"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print("[SUCCESS] : Serveur HTTP démarré avec succès.")
+    return http_server_process
+
+
 # Configuration du Rogue AP        
 def setup_rogue_ap(interface, channel, essid):
-    hostapd_process = None
     create_hostapd_conf(interface, channel, essid)
     create_dnsmasq_conf(interface)
     iptables_conf(interface)
