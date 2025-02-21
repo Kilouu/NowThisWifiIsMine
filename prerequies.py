@@ -7,6 +7,7 @@ def prerequies():
         "sudo apt-get install -y aircrack-ng",
         "sudo apt-get install -y hostapd",
         "sudo apt-get install -y dnsmasq",
+        "sudo apt-get install -y dnsmasq-base",
         "sudo apt-get install -y iptables",
         "sudo apt-get install -y apache2",
         "pip install -r requirements.txt"

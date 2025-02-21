@@ -8,7 +8,7 @@ def launch_wifi_attack():
     kill_process()
 
     # Active le mode monitor sur l'interface sélectionnée
-    start_mode_monitor(interface)
+    interface = start_mode_monitor(interface)
 
     # Lister les Réseaux Wifi
     lister_reseaux(interface, fichier_base="Capture/resultats", duree=20, dossier_json="Json")

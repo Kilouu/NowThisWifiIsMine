@@ -101,7 +101,13 @@ def start_mode_monitor(interface):
         result = subprocess.run(f"sudo airmon-ng start {interface}", shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             print(f"{SUCCESS_COLOR}[SUCCESS] : Mode monitor activé sur {interface}{RESET_COLOR}")
-            return result.stdout.strip()
+            if not interface.endswith("mon"):
+                interface_mon = f"{interface}mon"
+            else:
+                interface_mon = interface
+            print(f"{SUCCESS_COLOR}[SUCCESS] : Interface monitor : {interface_mon}{RESET_COLOR}")
+            return interface_mon
+            # return result.stdout.strip()
         else:
             print(f"{ERROR_COLOR}[ERROR] : Impossible d'activer le mode monitor sur {interface}\n{result.stderr}{RESET_COLOR}")
             return None
@@ -127,6 +133,7 @@ def stop_mode_monitor(interface):
 def lister_reseaux(interface, fichier_base="Capture/resultats", duree=20, dossier_json="Json"):
     try:
         create_directories()
+        print(interface)
         capture_wifi_networks(interface, fichier_base, duree)
         reseaux = read_csv_and_extract_networks(fichier_base)        
         save_to_json(reseaux, dossier_json="Result", filename="resultats.json")
