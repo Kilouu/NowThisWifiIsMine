@@ -11,6 +11,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-header("Location: index.html"); // Redirection après soumission
+header("Location: index.php"); // Redirection après soumission
 exit;
 ?>
