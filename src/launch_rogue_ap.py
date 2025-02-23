@@ -12,7 +12,7 @@ def launch_rogue_ap():
     kill_process()
 
     # Lister les Réseaux Wifi
-    bssid, channel, security, essid = lister_reseaux(interface, fichier_base="Capture/resultats", duree=20)
+    bssid, channel, security, essid = lister_reseaux(interface, fichier_base="Capture/resultats", duree=5)
     print(f"BSSID: {bssid}, Channel: {channel}, Security: {security}, ESSID: {essid}")
     
     # Création du fichier de configuration Hostapd et Dnsmasq

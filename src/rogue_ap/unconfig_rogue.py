@@ -1,5 +1,10 @@
 import os
 
+'''sudo iptables --flush
+sudo iptables --table nat --flush
+sudo iptables --delete-chain
+sudo iptables --table nat --delete-chain
+'''
 
 
 # Suppression du fichier de configuration Hostapd

